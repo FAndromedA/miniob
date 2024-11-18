@@ -21,6 +21,7 @@ See the Mulan PSL v2 for more details. */
 #include "event/session_event.h"
 #include "event/sql_event.h"
 #include "sql/executor/command_executor.h"
+#include "session/session.h"
 #include "sql/operator/calc_physical_operator.h"
 #include "sql/stmt/select_stmt.h"
 #include "sql/stmt/stmt.h"
@@ -46,7 +47,11 @@ RC ExecuteStage::handle_request(SQLStageEvent *sql_event)
     rc = command_executor.execute(sql_event);
     session_event->sql_result()->set_return_code(rc);
   } else {
-    return RC::INTERNAL;
+    if (sql_event->sql_node()->flag == SCF_DROP_TABLE) { // drop table 不需要执行计划和stmt
+      rc = session_event->session()->get_current_db()->drop_table(sql_event->sql_node()->drop_table.relation_name.c_str());
+    } else {
+      return RC::INTERNAL;
+    }
   }
   return rc;
 }

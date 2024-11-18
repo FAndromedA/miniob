@@ -125,6 +125,10 @@ void Value::set_data(char *data, int length)
       value_.bool_value_ = *(int *)data != 0;
       length_            = length;
     } break;
+    case AttrType::DATES: { // 因为是先 make_record 时已经将日期从字符串转换为 Date_t 类型，所以这里直接赋值即可
+      value_.date_value_ = *(Date_t *)data;
+      length_            = length;
+    } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
     } break;
@@ -175,6 +179,14 @@ void Value::set_string(const char *s, int len /*= 0*/)
   }
 }
 
+void Value::set_date(const Date_t &date)
+{
+  reset();
+  attr_type_          = AttrType::DATES;
+  value_.date_value_  = date;
+  length_             = sizeof(date);
+}
+
 void Value::set_value(const Value &value)
 {
   switch (value.attr_type_) {
@@ -186,6 +198,9 @@ void Value::set_value(const Value &value)
     } break;
     case AttrType::CHARS: {
       set_string(value.get_string().c_str());
+    } break;
+    case AttrType::DATES: {
+      set_date(value.get_date());
     } break;
     case AttrType::BOOLEANS: {
       set_boolean(value.get_boolean());
@@ -326,4 +341,23 @@ bool Value::get_boolean() const
     }
   }
   return false;
+}
+
+Date_t Value::get_date() const
+{
+  switch (attr_type_) {
+    case AttrType::DATES: {
+      return value_.date_value_;
+    } break;
+    case AttrType::CHARS: {
+      return Date_t(value_.pointer_value_);
+    } break;
+    case AttrType::INTS: {
+      return Date_t(value_.int_value_);
+    } break;
+    default: {
+      LOG_WARN("unknown data type. type=%d", attr_type_);
+      return Date_t(0);
+    }
+  }
 }

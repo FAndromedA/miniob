@@ -127,6 +127,39 @@ RC Table::create(Db *db, int32_t table_id, const char *path, const char *name, c
   return rc;
 }
 
+RC Table::drop() 
+{
+  RC rc = sync(); // flush data to disk
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to sync table data to disk. table=%s, rc=%d:%s", name(), rc, strrc(rc));
+    return rc;
+  }
+  // 删除表文件
+  string table_file = table_meta_file(base_dir_.c_str(), name());
+  if (unlink(table_file.c_str()) != 0) {
+    LOG_ERROR("Failed to remove table file. file name=%s, errmsg=%s", table_file.c_str(), strerror(errno));
+    return RC::FILE_NOT_EXIST;
+  }
+
+  // 删除数据文件
+  string data_file = table_data_file(base_dir_.c_str(), name());
+  if (unlink(data_file.c_str()) != 0) {
+    LOG_ERROR("Failed to remove data file. file name=%s, errmsg=%s", data_file.c_str(), strerror(errno));
+    return RC::FILE_NOT_EXIST;
+  }
+
+  // 删除索引文件
+  for (Index *index : indexes_) {
+    string index_file = table_index_file(base_dir_.c_str(), name(), index->index_meta().name());
+    if (unlink(index_file.c_str()) != 0) {
+      LOG_ERROR("Failed to remove index file. file name=%s, errmsg=%s", index_file.c_str(), strerror(errno));
+      return RC::FILE_NOT_EXIST;
+    }
+  }
+
+  return RC::SUCCESS;
+}
+
 RC Table::open(Db *db, const char *meta_file, const char *base_dir)
 {
   // 加载元数据文件

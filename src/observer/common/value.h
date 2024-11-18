@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/memory.h"
 #include "common/type/attr_type.h"
 #include "common/type/data_type.h"
+#include "common/type/date_type.h"
 
 /**
  * @brief 属性的值
@@ -34,6 +35,7 @@ public:
   friend class FloatType;
   friend class BooleanType;
   friend class CharType;
+  friend class DateType;
 
   Value() = default;
 
@@ -89,6 +91,7 @@ public:
   void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
   void set_value(const Value &value);
   void set_boolean(bool val);
+  void set_date(const Date_t &date);
 
   string to_string() const;
 
@@ -108,6 +111,7 @@ public:
   float  get_float() const;
   string get_string() const;
   bool   get_boolean() const;
+  Date_t get_date() const;
 
 private:
   void set_int(int val);
@@ -125,6 +129,7 @@ private:
     float   float_value_;
     bool    bool_value_;
     char   *pointer_value_;
+    Date_t  date_value_;
   } value_ = {.int_value_ = 0};
 
   /// 是否申请并占有内存, 目前对于 CHARS 类型 own_data_ 为true, 其余类型 own_data_ 为false
