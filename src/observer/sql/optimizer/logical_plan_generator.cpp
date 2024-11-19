@@ -71,8 +71,10 @@ RC LogicalPlanGenerator::create(Stmt *stmt, unique_ptr<LogicalOperator> &logical
     } break;
 
     case StmtType::UPDATE: {
-      
-    }
+      UpdateStmt *update_stmt = static_cast<UpdateStmt *>(stmt);
+
+      rc = create_plan(update_stmt, logical_operator);
+    } break;
 
     case StmtType::EXPLAIN: {
       ExplainStmt *explain_stmt = static_cast<ExplainStmt *>(stmt);
@@ -272,6 +274,7 @@ RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<Logical
   Table *table = update_stmt->table();
   Value *values = update_stmt->values();
   FilterStmt *filter_stmt = update_stmt->filter_stmt();
+  FieldMeta *field_meta = update_stmt->field_meta();
 
   unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_WRITE));
 
@@ -281,7 +284,7 @@ RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<Logical
   if (rc != RC::SUCCESS) {
     return rc;
   }
-  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, values));
+  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, values, field_meta));
   
   if (predicate_oper) { // 有 filter
     // update --(child)--> predicate --(child)--> table_get(read_write)

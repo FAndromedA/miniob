@@ -18,8 +18,8 @@ See the Mulan PSL v2 for more details. */
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 
-UpdateStmt::UpdateStmt(Table *table, Value *values, int value_amount, FilterStmt *filter_stmt)
-    : table_(table), values_(values), value_amount_(value_amount), filter_stmt_(filter_stmt)
+UpdateStmt::UpdateStmt(Table *table, Value *values, int value_amount, FilterStmt *filter_stmt, FieldMeta *field_meta)
+    : table_(table), values_(values), value_amount_(value_amount), filter_stmt_(filter_stmt), field_meta_(field_meta)
 {}
 
 RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
@@ -41,8 +41,8 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
 
   // check the field exists in the table 仅支持一个字段
   const TableMeta &table_meta = table->table_meta();
-  const FieldMeta *field_mate = table_meta.field(update.attribute_name.c_str());
-  if (nullptr == field_mate) {
+  const FieldMeta *field_meta = table_meta.field(update.attribute_name.c_str());
+  if (nullptr == field_meta) {
     LOG_WARN("no such field. table_name=%s, field_name=%s", table_name, update.attribute_name.c_str());
     return RC::SCHEMA_FIELD_NOT_EXIST;
   }
@@ -62,6 +62,6 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
   }
 
   // everything alright
-  stmt = new UpdateStmt(table, const_cast<Value *>(&update.value), 1, filter_stmt);
+  stmt = new UpdateStmt(table, const_cast<Value *>(&update.value), 1, filter_stmt, const_cast<FieldMeta *>(field_meta));
   return RC::SUCCESS;
 }

@@ -399,6 +399,12 @@ public:
 
   RC get_record(const RID &rid, Record &record);
 
+  /**
+   * @brief 更新指定文件中指定槽位的记录
+   * 
+   * @param rid    待更新记录的标识符
+   * @param updater 更新函数
+   */
   RC visit_record(const RID &rid, function<bool(Record &)> updater);
 
 private:

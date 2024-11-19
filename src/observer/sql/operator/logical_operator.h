@@ -57,6 +57,10 @@ public:
   virtual LogicalOperatorType type() const = 0;
 
   void        add_child(std::unique_ptr<LogicalOperator> oper);
+  /**
+   * 这两个函数都使用了 C++20 的新特性，即自动返回类型（auto）和尾随返回类型（->）。
+   * 这种语法使得代码更加简洁和易读，同时明确了函数的返回类型。
+   * 通过返回引用而不是副本，这些函数避免了不必要的拷贝操作，提高了性能。*/ 
   auto        children() -> std::vector<std::unique_ptr<LogicalOperator>>        &{ return children_; }
   auto        expressions() -> std::vector<std::unique_ptr<Expression>>        &{ return expressions_; }
   static bool can_generate_vectorized_operator(const LogicalOperatorType &type);
