@@ -240,7 +240,7 @@ RC PhysicalPlanGenerator::create_plan(ProjectLogicalOperator &project_oper, uniq
 
   auto project_operator = make_unique<ProjectPhysicalOperator>(std::move(project_oper.expressions()));
   if (child_phy_oper) {
-    project_operator->add_child(std::move(child_phy_oper));
+    project_operator->add_child(std::move(child_phy_oper)); // child 是 group by 或者 predicate 或者 table scan
   }
 
   oper = std::move(project_operator);

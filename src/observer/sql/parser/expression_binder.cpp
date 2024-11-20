@@ -420,10 +420,17 @@ RC ExpressionBinder::bind_aggregate_expression(
   unique_ptr<Expression>        &child_expr = unbound_aggregate_expr->child();
   vector<unique_ptr<Expression>> child_bound_expressions;
 
+  if (nullptr == child_expr) {
+    LOG_WARN("child expression of aggregate expression is invalid");
+    return RC::INVALID_ARGUMENT;
+  }
+
+  // check if the child expression is a star expression, if so, replace it with a value expression
   if (child_expr->type() == ExprType::STAR && aggregate_type == AggregateExpr::Type::COUNT) {
     ValueExpr *value_expr = new ValueExpr(Value(1));
     child_expr.reset(value_expr);
-  } else {
+  } else { 
+    // if not, bind the child expression with field expression
     rc = bind_expression(child_expr, child_bound_expressions);
     if (OB_FAIL(rc)) {
       return rc;

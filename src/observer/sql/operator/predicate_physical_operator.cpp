@@ -47,7 +47,7 @@ RC PredicatePhysicalOperator::next()
     }
 
     Value value;
-    rc = expression_->get_value(*tuple, value);
+    rc = expression_->get_value(*tuple, value); // 把 tuple 传给 expression_，计算出 value，这里 value 是一个布尔值表示是否满足条件
     if (rc != RC::SUCCESS) {
       return rc;
     }

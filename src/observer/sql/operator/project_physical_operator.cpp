@@ -57,12 +57,13 @@ RC ProjectPhysicalOperator::close()
 }
 Tuple *ProjectPhysicalOperator::current_tuple()
 {
-  tuple_.set_tuple(children_[0]->current_tuple());
+  tuple_.set_tuple(children_[0]->current_tuple()); // 投影
   return &tuple_;
 }
 
 RC ProjectPhysicalOperator::tuple_schema(TupleSchema &schema) const
 {
+  // 设置返回结果的表头信息
   for (const unique_ptr<Expression> &expression : expressions_) {
     schema.append_cell(expression->name());
   }

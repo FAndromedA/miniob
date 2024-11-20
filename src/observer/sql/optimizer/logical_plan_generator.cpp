@@ -132,7 +132,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   }
 
   unique_ptr<LogicalOperator> group_by_oper;
-  rc = create_group_by_plan(select_stmt, group_by_oper);
+  rc = create_group_by_plan(select_stmt, group_by_oper); // group by 包含 aggregate_expr 和 field_expr
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to create group by logical plan. rc=%s", strrc(rc));
     return rc;
@@ -146,7 +146,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     last_oper = &group_by_oper;
   }
 
-  auto project_oper = make_unique<ProjectLogicalOperator>(std::move(select_stmt->query_expressions()));
+  auto project_oper = make_unique<ProjectLogicalOperator>(std::move(select_stmt->query_expressions())); // 只选取给定的字段
   if (*last_oper) {
     project_oper->add_child(std::move(*last_oper));
   }
@@ -317,19 +317,21 @@ RC LogicalPlanGenerator::create_plan(ExplainStmt *explain_stmt, unique_ptr<Logic
 
 RC LogicalPlanGenerator::create_group_by_plan(SelectStmt *select_stmt, unique_ptr<LogicalOperator> &logical_operator)
 {
+  // 只要有 group by *或者* 聚合函数，就需要生成一个 group by 语句
   vector<unique_ptr<Expression>> &group_by_expressions = select_stmt->group_by();
   vector<Expression *> aggregate_expressions;
   vector<unique_ptr<Expression>> &query_expressions = select_stmt->query_expressions();
   function<RC(std::unique_ptr<Expression>&)> collector = [&](unique_ptr<Expression> &expr) -> RC {
     RC rc = RC::SUCCESS;
-    if (expr->type() == ExprType::AGGREGATION) {
+    if (expr->type() == ExprType::AGGREGATION) { // 收集所有的聚合函数
       expr->set_pos(aggregate_expressions.size() + group_by_expressions.size());
       aggregate_expressions.push_back(expr.get());
     }
     rc = ExpressionIterator::iterate_child_expr(*expr, collector);
     return rc;
   };
-
+  
+  // 找到 group by 的表达式
   function<RC(std::unique_ptr<Expression>&)> bind_group_by_expr = [&](unique_ptr<Expression> &expr) -> RC {
     RC rc = RC::SUCCESS;
     for (size_t i = 0; i < group_by_expressions.size(); i++) {
@@ -339,14 +341,14 @@ RC LogicalPlanGenerator::create_group_by_plan(SelectStmt *select_stmt, unique_pt
       } else if (expr->equal(*group_by)) {
         expr->set_pos(i);
         continue;
-      } else {
+      } else { // 递归查找
         rc = ExpressionIterator::iterate_child_expr(*expr, bind_group_by_expr);
       }
     }
     return rc;
   };
 
- bool found_unbound_column = false;
+ bool found_unbound_column = false; // 是否找到未绑定的列
   function<RC(std::unique_ptr<Expression>&)> find_unbound_column = [&](unique_ptr<Expression> &expr) -> RC {
     RC rc = RC::SUCCESS;
     if (expr->type() == ExprType::AGGREGATION) {

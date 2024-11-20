@@ -47,12 +47,12 @@ RC ScalarGroupByPhysicalOperator::open(Trx *trx)
     }
 
     // 计算需要做聚合的值
-    group_value_expression_tuple.set_tuple(child_tuple);
+    group_value_expression_tuple.set_tuple(child_tuple); // group 的 child 是 table_scan 或 predicate
 
     // 计算聚合值
     if (group_value_ == nullptr) {
       AggregatorList aggregator_list;
-      create_aggregator_list(aggregator_list);
+      create_aggregator_list(aggregator_list); // aggregate_expressions 生成的 aggregator_list
 
       ValueListTuple child_tuple_to_value;
       rc = ValueListTuple::make(*child_tuple, child_tuple_to_value);

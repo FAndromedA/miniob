@@ -545,16 +545,33 @@ bool AggregateExpr::equal(const Expression &other) const
   return aggregate_type_ == other_aggr_expr.aggregate_type() && child_->equal(*other_aggr_expr.child());
 }
 
+// 在 group by 操作中，聚合函数的计算是在 `GroupByPhysicalOperator` 中进行的，这里是根据 AggregateExpr 生成 Aggregator
 unique_ptr<Aggregator> AggregateExpr::create_aggregator() const
 {
   unique_ptr<Aggregator> aggregator;
   switch (aggregate_type_) {
+    case Type::COUNT: {
+      aggregator = make_unique<CountAggregator>(); 
+      break;
+    }
     case Type::SUM: {
       aggregator = make_unique<SumAggregator>();
       break;
     }
+    case Type::AVG: {
+      aggregator = make_unique<AvgAggregator>();
+      break;
+    }
+    case Type::MAX: {
+      aggregator = make_unique<MaxMinAggregator>(1);
+      break;
+    }
+    case Type::MIN: {
+      aggregator = make_unique<MaxMinAggregator>(-1);
+      break;
+    }
     default: {
-      ASSERT(false, "unsupported aggregate type");
+      ASSERT(false, "unsupported aggregate type %d", static_cast<int>(aggregate_type_));
       break;
     }
   }
