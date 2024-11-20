@@ -36,6 +36,7 @@ public:
   friend class BooleanType;
   friend class CharType;
   friend class DateType;
+  friend class VectorType;
 
   Value() = default;
 
