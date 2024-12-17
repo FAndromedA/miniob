@@ -162,6 +162,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
 %type <string>              aggregate_type
+%type <string>              index_type
 %type <sql_node>            calc_stmt
 %type <sql_node>            select_stmt
 %type <sql_node>            insert_stmt
@@ -278,16 +279,32 @@ desc_table_stmt:
     ;
 
 create_index_stmt:    /*create index 语句的语法解析树*/
-    CREATE INDEX ID ON ID LBRACE ID RBRACE
+    CREATE index_type INDEX ID ON ID LBRACE ID RBRACE
     {
       $$ = new ParsedSqlNode(SCF_CREATE_INDEX);
       CreateIndexSqlNode &create_index = $$->create_index;
-      create_index.index_name = $3;
-      create_index.relation_name = $5;
-      create_index.attribute_name = $7;
-      free($3);
-      free($5);
-      free($7);
+      if ($2 != nullptr) {
+        create_index.index_type = $2;
+      } else {
+        create_index.index_type = "";
+      }
+      create_index.index_name = $4;
+      create_index.relation_name = $6;
+      create_index.attribute_name = $8;
+      free($2);
+      free($4);
+      free($6);
+      free($8);
+    }
+    ;
+
+index_type:
+    /* empty */
+    {
+      $$ = nullptr; // stand for default non-unique index
+    }
+    | ID {
+      $$ = $1;
     }
     ;
 
