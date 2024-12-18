@@ -65,7 +65,12 @@ RC ProjectPhysicalOperator::tuple_schema(TupleSchema &schema) const
 {
   // 设置返回结果的表头信息
   for (const unique_ptr<Expression> &expression : expressions_) {
-    schema.append_cell(expression->name());
+    if (expression->type() == ExprType::FIELD) {
+      const FieldExpr *field_expr = static_cast<const FieldExpr *>(expression.get());
+      schema.append_cell(TupleCellSpec(field_expr->table_name(), field_expr->field_name(), field_expr->field_name())); // 方便 join table 的结果前面加上表名
+    } else {
+      schema.append_cell(expression->name());
+    }
   }
   return RC::SUCCESS;
 }

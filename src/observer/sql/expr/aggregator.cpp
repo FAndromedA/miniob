@@ -73,6 +73,10 @@ RC AvgAggregator::accumulate(const Value &value)
 
 RC AvgAggregator::evaluate(Value& result)
 {
+  if (count_ == 0) {
+    result.set_null(true);
+    return RC::SUCCESS;
+  }
   result.set_type(AttrType::FLOATS);
   LOG_DEBUG("value_ = %s, count_ = %d", value_.to_string().c_str(), count_);
   Value::divide(value_, Value(count_), result); // only float_type support divide
