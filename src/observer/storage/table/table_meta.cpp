@@ -67,7 +67,7 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
     fields_.resize(attributes.size() + trx_fields->size());
     for (size_t i = 0; i < trx_fields->size(); i++) {
       const FieldMeta &field_meta = (*trx_fields)[i];
-      fields_[i] = FieldMeta(field_meta.name(), field_meta.type(), field_offset, field_meta.len(), false /*visible*/, field_meta.field_id());
+      fields_[i] = FieldMeta(field_meta.name(), field_meta.type(), field_offset, field_meta.len(), false /*visible*/, field_meta.field_id(), field_meta.is_nullable());
       field_offset += field_meta.len();
     }
 
@@ -80,13 +80,13 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
     const AttrInfoSqlNode &attr_info = attributes[i];
     // `i` is the col_id of fields[i]
     rc = fields_[i + trx_field_num].init(
-      attr_info.name.c_str(), attr_info.type, field_offset, attr_info.length, true /*visible*/, i);
+      attr_info.name.c_str(), attr_info.type, field_offset, attr_info.length, true /*visible*/, i, attr_info.nullable);
     if (OB_FAIL(rc)) {
       LOG_ERROR("Failed to init field meta. table name=%s, field name: %s", name, attr_info.name.c_str());
       return rc;
     }
 
-    field_offset += attr_info.length;
+    field_offset += attr_info.length; // 计算下一个字段的偏移量, 为了支持 null 值，需要在字段的长度上加 1（在语法分析时已经加了）
   }
 
   record_size_ = field_offset;

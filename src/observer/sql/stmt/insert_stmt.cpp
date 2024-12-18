@@ -48,8 +48,9 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt)
   const int        field_num  = table_meta.field_num() - table_meta.sys_field_num();
   for(auto &item : inserts.items) {
     // check the fields number
-    if (field_num != item.size()) {
-      LOG_WARN("schema mismatch. value num=%d, field num in schema=%d", item.size(), field_num);
+    int item_size = static_cast<int>(item.size());
+    if (field_num != item_size) {
+      LOG_WARN("schema mismatch. value num=%d, field num in schema=%d", item_size, field_num);
       return RC::SCHEMA_FIELD_MISSING;
     }
   }

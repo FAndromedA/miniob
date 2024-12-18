@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/type/attr_type.h"
 #include "common/type/data_type.h"
 #include "common/type/date_type.h"
+#include <common/log/log.h>
 
 /**
  * @brief 属性的值
@@ -38,11 +39,11 @@ public:
   friend class DateType;
   friend class VectorType;
 
-  Value() = default;
+  Value() : attr_type_(AttrType::UNDEFINED), is_null_(true) {};
 
   ~Value() { reset(); }
 
-  Value(AttrType attr_type, char *data, int length = 4) : attr_type_(attr_type) { this->set_data(data, length); }
+  Value(AttrType attr_type, char *data, int length = 4) : attr_type_(attr_type) { this->set_data(data, length, true); }
 
   explicit Value(int val);
   explicit Value(float val);
@@ -52,33 +53,48 @@ public:
   Value(const Value &other);
   Value(Value &&other);
 
-  Value &operator=(const Value &other);
-  Value &operator=(Value &&other);
+  Value &operator=(const Value &other); // 拷贝赋值
+  Value &operator=(Value &&other); // 移动赋值
 
   void reset();
 
   static RC add(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      LOG_WARN("add null value");
+    }
     return DataType::type_instance(result.attr_type())->add(left, right, result);
   }
 
   static RC subtract(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      LOG_WARN("subtract null value");
+    }
     return DataType::type_instance(result.attr_type())->subtract(left, right, result);
   }
 
   static RC multiply(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      LOG_WARN("multiply null value");
+    }
     return DataType::type_instance(result.attr_type())->multiply(left, right, result);
   }
 
   static RC divide(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      LOG_WARN("divide null value");
+    }
     return DataType::type_instance(result.attr_type())->divide(left, right, result);
   }
 
   static RC negative(const Value &value, Value &result)
   {
+    if (value.is_null()) {
+      LOG_WARN("negative null value");
+    }
     return DataType::type_instance(result.attr_type())->negative(value, result);
   }
 
@@ -88,11 +104,13 @@ public:
   }
 
   void set_type(AttrType type) { this->attr_type_ = type; }
-  void set_data(char *data, int length);
+  void set_data(char *data, int length, bool is_not_null = false);
+  // 由于在 make_record 时，会在数据后面加上一个标记位，所以这里需要注意判断是否需要减去一个字节（语法分析时 attr_len 默认加了 1）
   void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
   void set_value(const Value &value);
   void set_boolean(bool val);
   void set_date(const Date_t &date);
+  void set_null(bool is_null) { this->is_null_ = is_null; }
 
   string to_string() const;
 
@@ -113,6 +131,7 @@ public:
   string get_string() const;
   bool   get_boolean() const;
   Date_t get_date() const;
+  bool   is_null() const { return is_null_; }
 
 private:
   void set_int(int val);
@@ -123,6 +142,7 @@ private:
 private:
   AttrType attr_type_ = AttrType::UNDEFINED;
   int      length_    = 0;
+  bool     is_null_   = false;
 
   union Val
   {
